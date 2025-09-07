@@ -69,7 +69,8 @@ func main() {
 	}
 
 	// Initialize database connection for session management
-	db, err := sql.Open("mysql", dbDSN+"?parseTime=true&loc=Local")
+	//db, err := sql.Open("mysql", dbDSN+"?parseTime=true&loc=Local") // Removed for docker testing
+	db, err := sql.Open("mysql", dbDSN)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

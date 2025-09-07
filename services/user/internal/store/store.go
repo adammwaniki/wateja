@@ -29,8 +29,8 @@ func NewRawDB(cfg mysql.Config) (*sql.DB, error) {
 }
 
 func NewStore(dsn string) (*store, error) {
-  // Ensure conversion of DATETIME columns to Go's time.Time and local time zone
-	dsn += "?parseTime=true&loc=Local"
+  	// Ensure conversion of DATETIME columns to Go's time.Time and local time zone
+	//dsn += "?parseTime=true&loc=Local" // removed for docker testing
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database connection: %w", err)

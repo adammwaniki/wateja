@@ -84,7 +84,7 @@ func (s *JWTService) GenerateTokenPair(userID, email, firstName, lastName string
 			ID:        accessJTI,
 			Issuer:    s.issuer,
 			Subject:   userID,
-			Audience:  jwt.ClaimStrings{"bebabeba-app"},
+			Audience:  jwt.ClaimStrings{"wateja-app"},
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.accessTokenTTL)),
 			NotBefore: jwt.NewNumericDate(now),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -100,7 +100,7 @@ func (s *JWTService) GenerateTokenPair(userID, email, firstName, lastName string
 			ID:        refreshJTI,
 			Issuer:    s.issuer,
 			Subject:   userID,
-			Audience:  jwt.ClaimStrings{"bebabeba-app"},
+			Audience:  jwt.ClaimStrings{"wateja-app"},
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.refreshTokenTTL)),
 			NotBefore: jwt.NewNumericDate(now),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -167,7 +167,7 @@ func (s *JWTService) ValidateToken(tokenString string) (*Claims, error) {
 	// Validate audience manually
 	audValid := false
 	for _, aud := range claims.Audience {
-		if aud == "bebabeba-app" {
+		if aud == "wateja-app" {
 			audValid = true
 			break
 		}

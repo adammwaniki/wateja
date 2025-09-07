@@ -24,9 +24,12 @@ profile.cov
 go.work
 go.work.sum
 
-# env file
-.env*
+# Dev env file
+cmd/.env
 
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Build file
+cmd/gateway-service

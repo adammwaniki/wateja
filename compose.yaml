@@ -1,0 +1,48 @@
+services:
+  database:
+    image: mysql:8
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - ./services/database/init:/docker-entrypoint-initdb.d
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+      interval: 10s
+
+  user:
+    build:
+      context: ./services/user
+      dockerfile: Dockerfile
+    container_name: user-service
+    ports:
+      - "127.0.0.1:2000:2000"
+      - "127.0.0.1:2001:2001"
+    env_file: ./services/user/cmd/.env
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "127.0.0.1:8080:8080"
+    env_file: ./services/gateway/cmd/.env
+    depends_on:
+      user:
+        condition: service_started
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db-data:
