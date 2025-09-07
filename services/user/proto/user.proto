@@ -1,0 +1,167 @@
+//services/user/proto/user.proto
+syntax = "proto3";
+
+package user;
+
+option go_package = "github.com/adammwaniki/wateja/services/user/genproto";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+service UserService {
+    // Regular endpoints - no GDPR or audit info
+    rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+    rpc GetUserByID(GetUserRequest) returns (GetUserResponse);
+    rpc GetUserBySSOID(GetUserBySSOIDRequest) returns (GetUserResponse);
+    rpc GetUserForAuth(GetUserForAuthRequest) returns (AuthUserResponse);
+    rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+    rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+    rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty); // I'll update this to handle data anonymization after soft deletion
+
+    // Compliance endpoints - requires special permissions
+    rpc GetUserForCompliance(GetUserRequest) returns (UserCompliance);
+    rpc GetConsentHistory(GetUserRequest) returns (UserConsentHistory);
+}
+
+// ================= Input Structures =================
+message CreateUserRequest {
+    RegistrationRequest user = 1;
+}
+
+message GetUserBySSOIDRequest {
+  string sso_id = 1;
+}
+
+message GetUserForAuthRequest {
+    string email = 1;
+}
+
+message UpdateUserRequest {
+    string user_id = 1;
+    UserInput user = 2;
+    google.protobuf.FieldMask update_mask = 3;
+}
+
+message RegistrationRequest { // For Create requests
+  string first_name = 1;
+  string last_name = 2;
+  string email = 3;
+  oneof auth_method {
+    string password = 4;  // Only for non-SSO
+    string sso_id = 5;    // For SSO users
+  }
+}
+
+message UserInput { // For Read, Update and Delete requests
+    string first_name = 1;
+    string last_name = 2;
+    string email = 3;
+    oneof auth_method {
+        string password = 4;  // Only for non-SSO
+        string sso_id = 5;    // For SSO users
+    }
+}
+
+// ================= Output Structures =================
+message CreateUserResponse {
+    string id = 1;   // external_id as a string
+    string first_name = 2;
+    string last_name = 3;
+    UserStatusEnum status = 4;
+    string email = 5;
+    google.protobuf.Timestamp terms_accepted_at = 7;
+    google.protobuf.Timestamp created_at = 8;
+}
+
+message GetUserResponse {
+    string id = 1;   // external_id
+    string first_name = 2;
+    string last_name = 3;
+    UserStatusEnum status = 4;
+    string email = 5;
+    google.protobuf.Timestamp terms_accepted_at = 7;
+    google.protobuf.Timestamp created_at = 8;
+    optional google.protobuf.Timestamp updated_at = 9;
+}
+
+message AuthUserResponse {
+    string id = 1;
+    string password_hash = 2; // Empty for SSO users
+    UserStatusEnum status = 3;
+}
+
+message ListUsersResponse {
+    repeated GetUserResponse users = 1;
+    string next_page_token = 2;
+}
+
+message UpdateUserResponse {
+    string id = 1;   // external_id 
+    string first_name = 2;
+    string last_name = 3;
+    UserStatusEnum status = 4;
+    string email = 5;
+    google.protobuf.Timestamp terms_accepted_at = 7;
+    google.protobuf.Timestamp created_at = 8;
+    optional google.protobuf.Timestamp updated_at = 9;
+}
+
+// ================= Shared Messages =================
+message GetUserRequest {
+    string user_id = 1;
+}
+
+message DeleteUserRequest {
+    string user_id = 1;
+}
+
+message ListUsersRequest {
+    int32 page_size = 1;
+    string page_token = 2;
+    optional UserStatusEnum status_filter = 3;
+    optional string name_filter = 4;
+}
+
+
+// ================= Enums =================
+enum UserStatusEnum {
+    STATUS_UNSPECIFIED = 0;
+    ACTIVE = 1;
+    SUSPENDED = 2;
+    PENDING = 3;
+    CLOSED = 4;
+}
+
+
+// ================= GDPR Compliance =================
+
+message UserCompliance {
+    CreateUserResponse user = 1;
+    UserConsentHistory consent = 2;
+    AddressCompliance address_validation = 3;
+    AuditInfo audits = 4;
+}
+
+message AddressCompliance {
+    bool is_verified = 1;
+    google.protobuf.Timestamp verified_at = 2;
+}
+
+message UserConsentHistory {
+    string data_consent_version = 1;
+    google.protobuf.Timestamp terms_accepted_at = 2;
+    optional google.protobuf.Timestamp consent_updated_at = 3;
+    optional google.protobuf.Timestamp consent_withdrawn_at = 4;
+    optional google.protobuf.Timestamp anonymized_at = 5;
+
+    // Soft Delete and Reactivation tracking if done prior to expiry of GDPR compliance timeframe
+    optional google.protobuf.Timestamp deleted_at = 6;
+    optional google.protobuf.Timestamp reactivated_at = 7;
+}
+
+message AuditInfo {
+    google.protobuf.Timestamp created_at = 1;
+    google.protobuf.Timestamp last_updated = 2;
+    repeated string modified_by = 3; // User IDs or system actors
+}
